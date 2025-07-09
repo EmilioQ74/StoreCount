@@ -1,0 +1,22 @@
+export const PRODUCTDATA = [
+  { id: '1', name: 'Apple', box: 0 },
+  { id: '2', name: 'Banana', box: 0 },
+  { id: '3', name: 'Carrot', box: 0 },
+  { id: '4', name: 'Tomato', box: 0 },
+  { id: '5', name: 'Lettuce', box: 0 },
+  { id: '6', name: 'Orange', box: 0 },
+  { id: '7', name: 'Potato', box: 0 },
+  { id: '8', name: 'Onion', box: 0 },
+  { id: '9', name: 'Cucumber', box: 0 },
+  { id: '10', name: 'Strawberry', box: 0 },
+  { id: '11', name: 'Broccoli', box: 0 },
+  { id: '12', name: 'Grapes', box: 0 },
+  { id: '13', name: 'Pineapple', box: 0 },
+  { id: '14', name: 'Peach', box: 0 },
+  { id: '15', name: 'Spinach', box: 0 },
+  { id: '16', name: 'Mango', box: 0 },
+  { id: '17', name: 'Zucchini', box: 0 },
+  { id: '18', name: 'Watermelon', box: 0 },
+  { id: '19', name: 'Chili Pepper', box: 0 },
+  { id: '20', name: 'Blueberry', box: 0 }
+];
