@@ -3,8 +3,10 @@ import React from 'react'
 import SCButtons from '../compoment/SCButtons'
 import { router } from 'expo-router'
 import SCDisplayProduct from '../compoment/SCDisplayProduct'
+import SCModal from '../compoment/SCModal'
 
 const count = () => {
+  const [modal,setModal] = React.useState(false);
   return (
    <SafeAreaView style={styles.container}>
       <View style={styles.listContainer}>
@@ -12,8 +14,11 @@ const count = () => {
       </View>
       <View style={styles.buttonContainer}>
         <SCButtons title="Save" onPress={()=>console.log("Cleared")} unPressedColor="#000" pressedColor="#fff" />
-        <SCButtons title="Clear" onPress={()=> console.log("Cleared")} unPressedColor="#000" pressedColor="#fff" />
+        <SCButtons title="Add Product" onPress={()=> setModal(true)} unPressedColor="#000" pressedColor="#fff"/>
         <SCButtons title="Back" onPress={() => router.back()} unPressedColor="#000" pressedColor="#fff" />
+      </View>
+      <View>
+        <SCModal modalVisible={modal}/>
       </View>
    </SafeAreaView>
   )
