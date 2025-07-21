@@ -1,29 +1,23 @@
-import { FlatList, SafeAreaView, StyleSheet, Text, View } from 'react-native'
-import React, { useRef } from 'react'
-import ProductListScreen from '../compoment/SCDisplayProduct'
+import { SafeAreaView, StyleSheet,  View } from 'react-native'
+import React from 'react'
 import SCButtons from '../compoment/SCButtons'
 import { router } from 'expo-router'
+import SCDisplayProduct from '../compoment/SCDisplayProduct'
 
 const count = () => {
-  const productListRef = useRef(null);
-
-  const handleSave = () => {
-    if (productListRef.current?.saveProducts) {
-      productListRef.current.saveProducts();
-    }
-  };
-
   return (
    <SafeAreaView style={styles.container}>
       <View style={styles.listContainer}>
-        <ProductListScreen ref={productListRef} />
+        <SCDisplayProduct />
       </View>
       <View style={styles.buttonContainer}>
-        <SCButtons title="Save" onPress={handleSave} unPressedColor="#000" pressedColor="#fff" />
+        <SCButtons title="Save" onPress={()=>console.log("Cleared")} unPressedColor="#000" pressedColor="#fff" />
+        <SCButtons title="Clear" onPress={()=> console.log("Cleared")} unPressedColor="#000" pressedColor="#fff" />
         <SCButtons title="Back" onPress={() => router.back()} unPressedColor="#000" pressedColor="#fff" />
       </View>
    </SafeAreaView>
   )
+
 }
 
 export default count
@@ -36,9 +30,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   listContainer: {
-    width: '100%',
+    paddingTop: 20,
+    width: '95%',
     height: '95%',
-    alignItems: 'center',
   },
   buttonContainer: {
     flexDirection: 'row',

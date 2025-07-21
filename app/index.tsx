@@ -3,6 +3,7 @@ import React from 'react'
 import SCButtons from '../compoment/SCButtons'
 import {router} from 'expo-router'
 
+
 // Home screen with navigation buttons
 const index = () => {
   return (
@@ -17,6 +18,12 @@ const index = () => {
         <SCButtons
           title="View Products"
           onPress={() => router.push("/view")}
+          unPressedColor="#000"
+          pressedColor="#fff"
+        />
+        <SCButtons
+          title = "Test"
+          onPress={() => router.push("/test1")}
           unPressedColor="#000"
           pressedColor="#fff"
         />
@@ -40,8 +47,7 @@ const styles = StyleSheet.create({
     color: '#000',
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flex:1,
     alignItems: 'center',
     marginTop: 20,
     width: '100%',

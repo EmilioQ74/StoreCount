@@ -1,197 +1,146 @@
-import React, { useImperativeHandle, forwardRef, useState, useRef, useCallback } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { StyleSheet, Text, TextInput, TouchableOpacity, FlatList, TextInput as TextInputType, Keyboard, LayoutRectangle, findNodeHandle, UIManager } from 'react-native';
-import { PRODUCTDATA } from '../model/product';
+import { FlatList, StyleSheet, Text, TextInput, TextInputComponent, TouchableOpacity, View } from 'react-native'
+import React from 'react'
+import { getData, updateProductBox } from '../db/commads'
+import { Product } from '../model/product';
 
-// Interface representing each product's data structure
-interface Product {
-  id: string;                      // Unique identifier for the product
-  name: string;                    // Product name
-  box: number;            // Quantity 
-  onBoxChange?: (id: string, newValue: string) => void; // Optional callback for changing box value
+
+
+interface ShowProductItemProps {
+  item: Product;
+  onPress: () => void;
+  selected?: boolean;
+  onBoxChange?: (id: string, newValue: string) => void;
+  onBlur?:(id:string)=>void;
 }
 
-// Props for the SCDisplayProduct component
-interface SCDisplayProductProps {
-  product: Product;                                  // Product object
-  onPress: (id: string) => void;                     // Handler when product is pressed
-  isSelected: boolean;                               // Whether this product is currently selected
-  setInputFocus: (id: string, ref: TextInputType | null) => void;  // Save TextInput refs for focus management
-}
 
-// Single product display component with selectable and editable box count
-const SCDisplayProduct: React.FC<SCDisplayProductProps> = ({
-  product,
-  onPress,
-  isSelected,
-  setInputFocus,
-}) => {
+const ShowProductItem = ({ item, onPress, selected,onBoxChange,onBlur}: ShowProductItemProps) => {
   return (
     <TouchableOpacity
-      onPress={() => onPress(product.id)}  // Trigger selection on press
-      style={[{ backgroundColor: isSelected ? '#3674B5' : 'lightgray' }, styles.container]} // Change bg color if selected
+      style={[styles.itemContainer, selected && { backgroundColor: '#10d3ecff' }]}
+      onPress={onPress}
     >
-      <Text style={styles.text}>{product.name}</Text>
+      <Text style={styles.itemText}>{item.name}</Text>
       <TextInput
-        keyboardType="numeric"
-        ref={(ref) => setInputFocus(product.id, ref)}  // Save ref for later focus control
-        style={styles.input}
-        value={String(product.box) || ''}                    // Controlled input from product.box
-        onChangeText={(text) =>
-          product.onBoxChange && product.onBoxChange(product.id, text) // Notify parent of changes
-        }
-      />
+      style = {styles.itemInput}
+      onFocus={onPress}
+      value={item.box.toString()}
+      placeholder={item.box.toString()}
+      onChangeText={text => onBoxChange(item.id.toString(), text)}
+      onBlur={()=>onBlur(item.id.toString())}
+      keyboardType="numeric"
+        />
     </TouchableOpacity>
-  );
-};
-
-// ProductListScreen displays and edits the list of products
-interface ProductListScreenProps {
-  onSave?: (products: Product[]) => void;
+  )
 }
 
-// Interface for the ref handle exposed by ProductListScreen
-interface ProductListScreenHandle {
-  saveProducts: () => void;
-}
+const SCDisplayProduct = () => {
 
-const ProductListScreen = forwardRef<ProductListScreenHandle, ProductListScreenProps>(({ onSave }, ref) => {
-  // State for products, cloned from imported data, so we can modify locally
-  const [products, setProducts] = useState<Product[]>(PRODUCTDATA.map((p) => ({ ...p })));
+  const [selectedProduct, setSelectedProduct] = React.useState<string | null>(null);
 
-  // State for the currently selected product ID (or null if none selected)
-  const [selectID, setSelectID] = useState<string | null>(null);
+  const [data,setData] = React.useState<Product[]>([]);
 
-  // Ref storing references to each product's TextInput by product ID
-  const focusToInput = useRef<Record<string, TextInputType | null>>({});
-  const flatListRef = useRef<FlatList>(null);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
-
-  // Store TextInput refs for focusing later
-  const setInputFocus = useCallback((id: string, ref: TextInputType | null) => {
-    if (ref) {
-      focusToInput.current[id] = ref; // Save the ref for the given product id
+  React.useEffect (()=>{
+     const fetchData = async ()=>{
+      try{
+        const tempData = await getData();
+        setData(tempData);
+      }catch{
+        console.error("Data not Received");
+      };
     }
-  }, []);
+    fetchData();
+  },[]
+);
 
-  // Update product box value on change
-  const handleBoxChange = useCallback((id: string, newValue: string) => {
-    const parsedValue = Number(newValue); // Convert input string to number
-    setProducts((current) =>
-      current.map((product) =>
-        product.id === id ? { ...product, box: parsedValue } : product // Update only the changed product
+  
+  const handleProductSelect = (id: string) => {
+    setSelectedProduct(prev => prev === id ? null : id);
+  };
+
+ const handleBoxChange = (id: string, newValue: string) => {
+  // Allow empty or numeric only
+  if (/^\d*$/.test(newValue)) {
+    setData(prev =>
+      prev.map(item =>
+        item.id === id ? { ...item, box: newValue } : item
       )
     );
-  }, []);
+  }
+};
 
-  // Listen for keyboard events to track keyboard height
-  React.useEffect(() => {
-    const showSub = Keyboard.addListener('keyboardDidShow', (e) => {
-      setKeyboardHeight(e.endCoordinates.height); // Set keyboard height when shown
-    });
-    const hideSub = Keyboard.addListener('keyboardDidHide', () => {
-      setKeyboardHeight(0); // Reset keyboard height when hidden
-    });
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, []);
+ const handleOnBlur = (id: string) => {
+  // Find the new value for this id in tempData array
+  const item = data.find(item => item.id.toString() === id);
+  if (!item) return;
 
-  // Handle product selection: set selected ID and focus the TextInput for that product
-  const handleSelected = useCallback((id: string) => {
-    setSelectID(id); // Set the selected product id
-    setTimeout(() => {
-      focusToInput.current[id]?.focus?.(); // Focus the TextInput for the selected product
+  const newValue = item.box || '';
 
-      // Find index of selected item
-      const index = products.findIndex((p) => p.id === id);
-      if (flatListRef.current && index !== -1) {
-        flatListRef.current.scrollToIndex({ index, animated: true }); // Scroll to the selected item
-      }
-    }, 0);
-    console.log('Selected ID:', id);
-  }, [products]);
-
-  // Save products to AsyncStorage and notify parent if needed
-  const saveProducts = useCallback(async () => {
-    try {
-      await AsyncStorage.setItem('products', JSON.stringify(products));
-      if (onSave) onSave(products);
-      alert('Saved!');
-    } catch (e) {
-      alert('Save failed');
-    }
-  }, [products, onSave]);
-
-  // Expose saveProducts to parent via ref
-  useImperativeHandle(ref, () => ({
-    saveProducts,
-  }));
-
-  // Load products from storage on mount
-  React.useEffect(() => {
-    const loadProducts = async () => {
-      const data = await AsyncStorage.getItem('products');
-      if (data) {
-        setProducts(JSON.parse(data));
-      }
-    };
-    loadProducts();
-  }, []);
-
-  // Save products to storage whenever they change
-  React.useEffect(() => {
-    AsyncStorage.setItem('products', JSON.stringify(products));
-  }, [products]);
-
-  // Render each product, injecting the onBoxChange callback dynamically
-  const renderProduct = useCallback(
-    ({ item }: { item: Product }) => (
-      <SCDisplayProduct
-        product={{ ...item, onBoxChange: handleBoxChange }} // Pass product data and change handler
-        onPress={handleSelected} // Pass selection handler
-        isSelected={item.id === selectID} // Highlight if selected
-        setInputFocus={setInputFocus} // Pass ref setter for focus management
-      />
-    ),
-    [handleSelected, selectID, setInputFocus, handleBoxChange]
+  const parseNum = Number(newValue);
+  if(isNaN(parseNum))return;
+  
+  // Update state with new box value
+  setData(prev =>
+    prev.map(item =>
+      item.id.toString() === id ? { ...item, box: parseNum } : item
+    )
   );
 
-  return (
-    <FlatList
-      ref={flatListRef}
-      data={products}                         // Use mutable state products here to reflect edits
-      renderItem={renderProduct}              // Render each item via SCDisplayProduct
-      keyExtractor={(item) => item.id}        // Use product id as key (string)
-      extraData={selectID}                    // Re-render when selection changes
-      contentContainerStyle={{ alignItems: 'center' }}  // Center list items horizontally
-      keyboardShouldPersistTaps="handled"
+  // Call updateProductBox with { id, box }
+  updateProductBox(data[Number(id)-1]);
+  console.log(id);
+};
+
+
+  const renderItem = ({ item }: { item: Product }) => (
+    <ShowProductItem 
+      item={item}
+      onPress={() => handleProductSelect(item.id.toString())}
+      onBoxChange={handleBoxChange}
+      selected={selectedProduct === item.id.toString()}
+      onBlur={()=>handleOnBlur(item.id.toString())}
     />
   );
-});
+  return (
+    <View style={styles.container}>
+        <FlatList
+          data={data}
+          renderItem={renderItem}
+          keyExtractor={(item) => item.id.toString()}
+          extraData={selectedProduct}
+        />
+    </View>
+  )
+}
 
-export default ProductListScreen;
+export default SCDisplayProduct
 
-// Styles for the components
 const styles = StyleSheet.create({
   container: {
-    borderRadius: 10,
+    flex: 1,
     padding: 10,
-    width: '95%',
+    backgroundColor: '#fff',
+  },
+  itemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
+    padding: 10,
+    marginVertical: 5,
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 5,
+    backgroundColor: '#474afdff',
   },
-  text: {
-    fontSize: 20,
+  itemText: {
+    fontSize: 16,
     color: '#000',
   },
-  input: {
-    backgroundColor: '#fff',
-    width: '15%',
+  itemInput: {
+    width: 60,
+    borderWidth: 1,
+    padding: 5,
+    marginTop: 5,
     borderRadius: 5,
-    paddingHorizontal: 5,
-    textAlign: 'center',
+    color: '#000',
   },
-});
+})

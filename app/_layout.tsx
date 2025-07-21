@@ -31,6 +31,32 @@ export default function RootLayout() {
           headerBackVisible: false
         }
       }/>
+      <Stack.Screen name="view" options={
+        {
+          headerShown: true,
+          headerTitle: 'View Products',
+          headerStyle: {
+            backgroundColor: '#3674B5',
+          },
+          headerTitleStyle: {
+            color: '#fff',
+          },
+          headerBackVisible: false
+        }
+      }/>
+      <Stack.Screen name="test1" options={
+        {
+          headerShown: true,
+          headerTitle: 'Test DB',
+          headerStyle: {
+            backgroundColor: '#3674B5',
+          },
+          headerTitleStyle: {
+            color: '#fff',
+          },
+          headerBackVisible: false
+        }
+      }/>
       </Stack>
   )
 }

@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, FlatList, Text, View, StyleSheet } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getData,} from '../db/commads';
 
 const ViewProductsScreen = () => {
   const [products, setProducts] = useState([]);
 
   useEffect(() => {
     const loadProducts = async () => {
-      const data = await AsyncStorage.getItem('products');
+      const data = await getData();
+      console.log('Loaded products:', data);
       if (data) {
-        setProducts(JSON.parse(data));
+        setProducts(data);
       }
     };
     loadProducts();
