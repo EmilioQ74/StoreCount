@@ -7,8 +7,9 @@ Offline functionality with SQLite is working.
 UI and additional features are still in progress.
 
 Future Plans
+
 Improve UI/UX
-Synchronization with cloud storage (optional)
+Synchronization with cloud storage
 User authentication and profiles
 Fix some Bugs
 
