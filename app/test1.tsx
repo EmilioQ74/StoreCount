@@ -1,15 +1,15 @@
 import React, { useEffect } from 'react';
 import { View, Text, Alert } from 'react-native';
-import * as test from '../db/commads';
-import { setupDB } from '../db/setupDB';
 import SCButtons from '../compoment/SCButtons';
+import { DeleteDatabase, deleteTable, getAllTable, getTableData, setup, tempTable} from 'db/init';
+import * as test from '../db/commads';
 
 
 export default function App() {
   useEffect(() => {
     (async () => {
       try {
-        await setupDB();
+        await setup();
         console.log('✅ Database setup completed successfully');
         Alert.alert('Success', 'Database setup completed successfully');
       } catch (error) {
@@ -23,21 +23,22 @@ export default function App() {
       <Text>SQLite + Expo Test</Text>
       <SCButtons
         title="Test Database"
-        onPress={()=>test.insertProduct(80, "Test Product", 10)}
-        unPressedColor="#000"
-        pressedColor="#fff"
+        onPress={()=>test.insertProduct(`Test Product ${Math.floor(Math.random() * 100)}`)}
       />
       <SCButtons
         title="Show Products"
-        onPress={()=>test.showTable()}
-        unPressedColor="#000"
-        pressedColor="#fff"
+        onPress={async ()=>console.log(JSON.stringify(await test.getAllProducts(),null,2))}
+      />
+      <SCButtons
+        title="Show Tables"
+        onPress={()=> getAllTable()}
       />
       <SCButtons
         title="Drop Table"
-        onPress={()=>test.dropTable()}
-        unPressedColor="#000"
-        pressedColor="#fff"
+        onPress={()=>deleteTable(`Malaka`)}
+      /><SCButtons
+        title="Delete Database"
+        onPress={()=>DeleteDatabase}
       />
     </View>
   );

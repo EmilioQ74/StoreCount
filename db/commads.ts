@@ -1,116 +1,249 @@
-import { initDB } from '../db/setupDB'
-import * as SQLite from 'expo-sqlite';
-import {Product} from '../model/product'
+import * as SQLite from 'expo-sqlite'
+import * as init  from './init';
+import { Product } from '../model/Product';
 
+let db = init.db;
 
-let db: SQLite.SQLiteDatabase | null = null;
-
-
-export const showTable = async () => {
-  if (!db) db = await initDB();
-  if (!db) {
-    console.error('Database initialization failed');
-    return;
-  }
-  try {
-    const getAll = await db.getAllAsync<{ id: number; name: string; box: number }>('SELECT * FROM products;');
-    if (getAll.length === 0) {
-      console.warn('No products found in the database.');
-      return [];
+export const getAllProducts = async (tableName:string = init.tempTable):Promise<Product[]>=>{
+    if(db===null) db = await init.init();
+    
+    try{
+        let result:any[];
+        if(tableName==='')return;
+        if(tableName === init.tempTable){
+            result = await db.getAllAsync(`SELECT * FROM ${tableName} WHERE deleted = 0;`);
+        }else{
+            result = await db.getAllAsync(`SELECT * FROM ${tableName}`);
+        }
+        return result ? result.map((item: any) => ({
+            id: item.id,
+            name: item.name,
+            quantity: item.quantity,
+            difference: item.difference ?? null
+        })) : [];
+    }catch(error){
+        console.error(`Unable to get all products ${error}`);
+    }finally{
+        
     }
-    for await (const product of getAll) {
-      console.log(`Product ID: ${product.id}, Name: ${product.name}, Box: ${product.box}`);
+}
+
+export const insertProduct = async(name:string,tableName:string = init.tempTable)=>{
+   if(db===null) db = await init.init();
+    const stmt = await db.prepareAsync(`INSERT INTO ${tableName} (name,quantity,difference) VALUES (?,0,0);`);
+    try{
+        await stmt.executeAsync([name]);
+    }catch(error)
+    {
+        console.error(error);
+    }finally{
+        await stmt.finalizeAsync();
+        
     }
-    return getAll;
-  } catch (error) {
-    console.error('Error fetching products:', error);
-    return null;
-  }
-};
+}
 
-export const getData = async () => {
-  const data = await showTable();
-  if (data === null || data.length === 0) {
-    console.warn('No data found');
-    return [];
-  }
-  return data.map((p) => ({
-    id: p.id.toString(),
-    name: p.name,
-    box: p.box.toString(),
-  }));
-};
-
-export const insertProduct = async (id: number, name: string, box: number) => {
-  if (!db) db = await initDB();
-  if (!db) {
-    console.error('Database initialization failed');
-    return;
-  }
-
-  try {
-    const insertStatement = await db.prepareAsync('INSERT INTO products (id, name, box) VALUES (?, ?, ?);');
-    await insertStatement.executeAsync([id, name, box]);
-    console.log(`Inserted product: id=${id}, name=${name}, box=${box}`);
-  } catch (error) {
-    console.error('Error inserting product:', error);
-  }
-};
-
-export const dropTable = async () => {
-  if (!db) db = await initDB();
-  if (!db) {
-    console.error('Database initialization failed');
-    return;
-  }
-
-  try {
-    await db.execAsync('DROP TABLE IF EXISTS products;');
-    console.log('Table "products" dropped successfully.');
-  } catch (error) {
-    console.error('Error dropping table:', error);
-  }
-};
-
-export const saveTempData = async (data: Product[]) => {
-  if (!db) db = await initDB();
-
-  try {
-    const stm = await db.prepareAsync('UPDATE products SET box = ? WHERE id = ?;');
-    for await (const p of data) {
-      await stm.executeAsync([p.box, p.id]);
+export const modifyProduct = async(id:number,name:string,tableName:string = init.tempTable)=>{
+   if(db===null) db = await init.init();
+   let stmt;
+   console.log('here')
+   if(tableName===init.tempTable)
+   {
+    stmt = await db.prepareAsync(`UPDATE ${tableName} SET name = ?, deleted = 0 WHERE id = ?;`);
+   }else{
+    stmt = await db.prepareAsync(`UPDATE ${tableName} SET name = ? WHERE id = ?;`);
+   }
+    try{
+        await stmt.executeAsync([name,id]);
+    }catch(error)
+    {
+        console.error(error);
+    }finally{
+        await stmt.finalizeAsync();
+        
     }
-    alert('Saved successfully');
-  } catch {
-    console.error('Failed to save');
-    return;
-  }
-};
+}
 
-export const ClearAllBox = async (data: Product[]) => {
-  if (!db) db = await initDB();
-
-  try {
-    const stm = await db.prepareAsync('UPDATE products SET box = 0 WHERE id = ?;');
-    for await (const p of data) {
-      await stm.executeAsync([p.id]);
+export const modifyProductQuantity = async(id:number,quantity:number,tableName:string = init.tempTable)=>{
+   if(db===null) db = await init.init();
+    const stmt = await db.prepareAsync(`UPDATE ${tableName} SET quantity = ? WHERE id = ?;`);
+    try{
+        await stmt.executeAsync([quantity,id]);
+    }catch(error)
+    {
+        console.error('Unable to Modify product Quantity')
+    }finally{
+        await stmt.finalizeAsync();
+        
     }
-    alert('Cleared');
-  } catch {
-    console.error('Failed to clear');
-    return;
-  }
-};
-export const updateProductBox = async (data:Product) => {
-  if (!db) db = await initDB();
+}
+export const modifyProductDifference = async(id:number,quantity:number,tableName:string = init.tempTable)=>{
+   if(db===null) db = await init.init();
+    const stmt = await db.prepareAsync(`UPDATE ${tableName} SET difference = ? WHERE id = ?;`);
+    try{
+        await stmt.executeAsync([quantity,id]);
+    }catch(error)
+    {
+        console.error('Unable to Modify product Difference')
+    }finally{
+        await stmt.finalizeAsync();
+        
+    }
+}
 
-  try {
-    const stmt = await db.prepareAsync('UPDATE products SET box = ? WHERE id = ?;');
-    await stmt.executeAsync([data.box,data.id]);
+export const deleteProductById = async(id:number,tableName:string = init.tempTable)=>{
+   if(db===null) db = await init.init();
+    let stmt;
+   if (tableName === init.tempTable) {
+        stmt = await db.prepareAsync(`UPDATE ${init.tempTable} SET name = 'test' , quantity = 0 ,deleted = 1 
+                                         WHERE id = ?;`);
+   } else {
+        stmt = await db.prepareAsync(`DELETE FROM ${tableName} WHERE id = ${id};`);
+   }
+    try{
+        await stmt.executeAsync([id]);
+    }catch(error)
+    {
+        console.error(error);
+    }finally{
+        await stmt.finalizeAsync();
+        
+    }
+}
 
-    console.log(`Product ${data.id} box updated to ${data.box}`);
-  } catch (error) {
-    console.error('Update failed:', error);
-    alert('Update failed');
-  }
-};
+
+export const getFirstDeletedProduct= async():Promise<number|null>=>{
+   if(db===null) db = await init.init();
+    try {
+        const result = await db.getFirstAsync(`SELECT id FROM ${init.tempTable} WHERE deleted = 1 ORDER BY id ASC;`) as {id:number};
+        return result ? Number(result.id) : null;
+    } catch (error) {
+        console.error(error);
+    }finally{
+        
+    }
+}
+
+export const checkIfProductExist = async(name:string,tableName:string = init.tempTable):Promise<Boolean>=>{
+   if(db===null) db = await init.init();
+    try{
+        let result;
+        if(tableName === init.tempTable)
+        {
+            result = await db.getFirstAsync(`SELECT name FROM ${init.tempTable} WHERE name = ? AND deleted = 0 COLLATE NOCASE;`,[name]);
+        }else{
+            result = await db.getFirstAsync(`SELECT name FROM ${init.tempTable} WHERE name = ? COLLATE NOCASE;`,[name]);
+        }
+       
+        return result ? true : false;
+    }catch(error){
+        console.error(`Unable to get if name exist ${error}`);
+        return null;
+    }finally{
+        
+    }
+}
+
+
+export const getProductById = async(id:number,tableName:string = init.tempTable):Promise<Product|null>=>{
+   if(db===null) db = await init.init();
+    try{
+        console.log(`Fetching product with ID: ${id}`);
+        const result:Product = await db.getFirstAsync(`SELECT * FROM ${tableName} WHERE id = ?;`,[id]);
+        console.log(result);
+        return result ? {
+            id: result.id,
+            name: result.name,
+            quantity: result.quantity,
+            difference: result.difference ?? null
+        } : null;
+    }catch(error){
+        console.error(`Unable to get product by id ${error}`);
+        return null;
+    }finally{
+        
+    }
+}
+
+export const getTableNameById = async(id:number,tableName:string):Promise<any>=>{
+    if(db === null) db = await init.init();
+    try{
+        const result = await db.getFirstAsync<{name:string}>(`SELECT name FROM ${tableName} WHERE id = ? ;`,[id]);
+        return result?{
+            name:result.name,
+        }: null;
+    }catch(error)
+    {
+        console.error(`Unable to get the name from table ${tableName}: ${error}`);
+    }
+}
+
+export const createTable = async(tableName:string):Promise<Boolean>=>
+{
+   if(db===null) db = await init.init();
+
+    try{
+        if(await init.checkIfTableExist(tableName))
+        {
+            console.log(`${tableName} table exist`);
+            return true;
+        }
+        const result = await db.runAsync(`CREATE TABLE IF NOT EXISTS ${tableName}(
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                quantity REAL NOT NULL,
+                difference REAL NOT NULL
+                );`);
+        
+        return result ? true : false;
+    }catch(error)
+    {
+        console.log(`Error at creating a table ${error}`)
+        return null;
+    }finally{
+        
+    }
+}
+
+
+export const saveRecord = async(tableName:string)=>{
+   if(db===null) db = await init.init();
+    
+    try{
+    if(!(await init.checkIfTableExist(`record`)))
+    {
+        await db.runAsync(`CREATE TABLE IF NOT EXISTS record(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL);`);
+    }
+       await db.execAsync(`INSERT INTO record (name) VALUES ('${tableName}')`);
+    }catch(error)
+    {
+        console.log(`Error at saving record ${error}`);
+    }finally{
+        
+    }
+}
+
+export const saveTable = async(tableName:string,data:Product[])=>{
+   if(db===null) db = await init.init();
+    try{
+        if(!(await createTable(tableName)))
+        {
+            console.log(`Unable to Save table!`);
+            return;
+        }
+        const stmt = await db.prepareAsync(`INSERT INTO ${tableName} (name,quantity,difference) VALUES (?,?,?);`)
+        for(const p of data)
+        {
+            await stmt.executeAsync([p.name,p.quantity,p.difference]);
+        }
+        await stmt.finalizeAsync();
+        await saveRecord(tableName);
+        
+    }catch(error)
+    {
+        console.log(`Error at saving the table:${error}`);
+    }finally{
+        
+    }
+}

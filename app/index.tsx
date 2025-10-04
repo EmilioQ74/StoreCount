@@ -1,7 +1,8 @@
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native'
+import { Pressable, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import React from 'react'
 import SCButtons from '../compoment/SCButtons'
 import {router} from 'expo-router'
+
 
 
 // Home screen with navigation buttons
@@ -11,22 +12,16 @@ const index = () => {
       <Text style={styles.text}>Welcome to Store Count</Text>
       <View style={styles.buttonContainer}>
         {/* Button to go to counting screen */}
-        <SCButtons title="Count Products" onPress={() => [console.log("Count Product Page"),router.push("/count")]} unPressedColor="#000" pressedColor="#fff" />
+        <SCButtons title="Count Products" onPress={() => [console.log("Count Product Page"),router.push("/(tabs)/count")]}/>
         {/* Button for future modify products feature */}
-        <SCButtons title="Modify Products" onPress={() => console.log("Modify Product Page")} unPressedColor="#000" pressedColor="#fff" />
+        <SCButtons title="Modify Products" onPress={() => console.log("Modify Product Page")} />
         {/* Button to view saved products */}
-        <SCButtons
-          title="View Products"
-          onPress={() => router.push("/view")}
-          unPressedColor="#000"
-          pressedColor="#fff"
-        />
         <SCButtons
           title = "Test"
           onPress={() => router.push("/test1")}
-          unPressedColor="#000"
-          pressedColor="#fff"
         />
+        <SCButtons title="Save Products" onPress={()=> router.push('/saveList')}/>
+          
       </View>
     </SafeAreaView>
   )
@@ -53,5 +48,5 @@ const styles = StyleSheet.create({
     width: '100%',
     paddingHorizontal: 20,
     gap: 10,
-  }
+  },
 })

@@ -14,14 +14,19 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.emilio74.StoreCount",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "package": "com.emilio74.StoreCount"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,19 +34,27 @@
     "plugins": [
       "expo-router",
       [
-      "expo-sqlite",
-      {
-        "enableFTS": true,
+        "expo-sqlite",
+        {
+          "enableFTS": true,
           "useSQLCipher": true,
           "android": {
             "enableFTS": false,
             "useSQLCipher": false
-       },
-      "ios": {
-            "customBuildFlags": ["-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"]
+          },
+          "ios": {
+            "customBuildFlags": [
+              "-DSQLITE_ENABLE_DBSTAT_VTAB=1 -DSQLITE_ENABLE_SNAPSHOT=1"
+            ]
           }
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "27efc9d2-0d71-4cf5-aa3e-6597242eca19"
       }
-    ]
-  ]
+    }
   }
 }
